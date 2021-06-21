@@ -188,18 +188,23 @@ async def _prepare_update(
 ):
     ipv4_address = None
     ipv6_address = None
+    success = True
 
     if ipv4_mode == "auto":
-        response = await _update_duckdns(session, domain, token)
+        if not await _update_duckdns(session, domain, token):
+            success = False
     elif ipv4_mode == "nameserver":
         ipv4_address = await _get_ip_address(hostname, ipv4_resolver, "A")
 
     if ipv6_mode == "nameserver":
         ipv6_address = await _get_ip_address(hostname, ipv6_resolver, "AAAA")
 
-    return await _update_duckdns(
+    if not await _update_duckdns(
         session, domain, token, ipv4_address=ipv4_address, ipv6_address=ipv6_address
-    )
+    ):
+        success = False
+
+    return success
 
 
 @callback
