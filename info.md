@@ -61,7 +61,7 @@ This is a regular HACS install from custom Github repository *(if you already kn
 **Note**: if the custom_components directory does not exist, you need to create it.
 After a correct installation, your configuration directory should look like the following.
 
-    ```text
+    ```
     └── ...
     └── configuration.yaml
     └── custom_components
