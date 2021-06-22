@@ -5,5 +5,6 @@
     "issue_tracker": "https://github.com/lfhohmann/ha-duckdns_ipv4_ipv6/issues",
     "codeowners": [
       "@lfhohmann"
-    ]
+    ],
+    "version": "0.0.1"
   }

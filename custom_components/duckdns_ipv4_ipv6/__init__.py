@@ -45,8 +45,12 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Required(CONF_DOMAIN): cv.string,
                 vol.Required(CONF_ACCESS_TOKEN): cv.string,
                 vol.Optional(CONF_HOSTNAME, default=DEFAULT_HOSTNAME): cv.string,
-                vol.Optional(CONF_IPV4_MODE, default=DEFAULT_IPV4_MODE): cv.string,
-                vol.Optional(CONF_IPV6_MODE, default=DEFAULT_IPV6_MODE): cv.string,
+                vol.Optional(CONF_IPV4_MODE, default=DEFAULT_IPV4_MODE): vol.Any(
+                    "off", "auto", "nameserver"
+                ),
+                vol.Optional(CONF_IPV6_MODE, default=DEFAULT_IPV6_MODE): vol.Any(
+                    "off", "nameserver"
+                ),
                 vol.Optional(
                     CONF_IPV4_RESOLVER, default=DEFAULT_IPV4_RESOLVER
                 ): cv.string,
@@ -111,28 +115,6 @@ async def async_setup(hass, config):
     return True
 
 
-async def _get_ip_address(hostname, resolver_address, query_type):
-    """Get IP address"""
-    response = None
-
-    try:
-        resolver = aiodns.DNSResolver()
-        resolver.nameservers = [resolver_address]
-
-        try:
-            response = await resolver.query(hostname, query_type)
-        except:
-            response = None
-
-    except:
-        response = None
-
-    if response:
-        response = response[0].host
-
-    return response
-
-
 _SENTINEL = object()
 
 
@@ -144,10 +126,12 @@ async def _update_duckdns(
     ipv4_address=None,
     ipv6_address=None,
     txt=_SENTINEL,
-    clear=False
+    clear=False,
 ):
     """Update DuckDNS."""
     params = {"domains": domain, "token": token}
+
+    # _LOGGER.debug(f"_update_duckdns: {ipv4_address} {ipv6_address}")
 
     if txt is not _SENTINEL:
         if txt is None:
@@ -161,19 +145,46 @@ async def _update_duckdns(
         params["clear"] = "true"
 
     if ipv4_address:
+        # _LOGGER.debug(f"_update_duckdns: Got IPV4 - {ipv4_address}")
         params["ip"] = ipv4_address
 
     if ipv6_address:
+        # _LOGGER.debug(f"_update_duckdns: Got IPV6 - {ipv6_address}")
         params["ipv6"] = ipv6_address
 
     resp = await session.get(UPDATE_URL, params=params)
     body = await resp.text()
 
     if body != "OK":
-        _LOGGER.warning("Updating DuckDNS domain failed: %s", domain)
+        _LOGGER.warning(f"_update_duckdns: Updating DuckDNS domain failed: {domain}")
         return False
+    else:
+        _LOGGER.info(f"_update_duckdns: Updating DuckDNS domain succeeded: {domain}")
+        return True
 
-    return True
+
+async def _get_ip_address(hostname, resolver_address, query_type):
+    """Get IP address"""
+
+    # _LOGGER.debug(f"_get_ip_address: {hostname} {resolver_address} {query_type}")
+
+    try:
+        resolver = aiodns.DNSResolver()
+        resolver.nameservers = [resolver_address]
+        response = await resolver.query(hostname, query_type)
+
+    except:
+        _LOGGER.warning(
+            f"Unable to setup resolver for: {hostname} - {resolver_address} - {query_type}"
+        )
+        return None
+
+    if response:
+        # _LOGGER.debug(f"Got IP: {response[0].host}")
+        return response[0].host
+    else:
+        _LOGGER.warning(f"Didn't get an IP from: {hostname} - {resolver_address}")
+        return None
 
 
 async def _prepare_update(
@@ -186,23 +197,31 @@ async def _prepare_update(
     ipv4_mode,
     ipv6_mode,
 ):
+    _LOGGER.debug(f"{hostname} {ipv4_resolver} {ipv6_resolver} {ipv4_mode} {ipv6_mode}")
+
     ipv4_address = None
     ipv6_address = None
     success = True
 
     if ipv4_mode == "auto":
+        # _LOGGER.debug(f"_prepare_update: Updating IPV4 in auto mode")
         if not await _update_duckdns(session, domain, token):
             success = False
+
     elif ipv4_mode == "nameserver":
+        # _LOGGER.debug(f"_prepare_update: Getting IPV4 address")
         ipv4_address = await _get_ip_address(hostname, ipv4_resolver, "A")
 
     if ipv6_mode == "nameserver":
+        # _LOGGER.debug(f"_prepare_update: Getting IPV6 address")
         ipv6_address = await _get_ip_address(hostname, ipv6_resolver, "AAAA")
 
-    if not await _update_duckdns(
-        session, domain, token, ipv4_address=ipv4_address, ipv6_address=ipv6_address
-    ):
-        success = False
+    if ipv4_address or ipv6_address:
+        # _LOGGER.debug(f"_prepare_update: Updating IPV4 and/or IPV6 in nameserver mode")
+        if not await _update_duckdns(
+            session, domain, token, ipv4_address=ipv4_address, ipv6_address=ipv6_address
+        ):
+            success = False
 
     return success
 
