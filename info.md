@@ -174,6 +174,26 @@ You must use resolvers that match your chosen hostname, otherwise, it won't work
 
 You can't combine the `whoami.akamai.net` hostname with `216.239.32.10` resolver for example.
 
+## Services
+
+### Update IP
+
+Calls a Duck DNS IP address update.
+
+| Service data attribute    | Optional  | Description                                                                                       |
+| ------------------------- | --------- | ------------------------------------------------------------------------------------------------- |
+| `ipv4_address`            | yes       | Specific IPV4 Address to set the DuckDNS records.                                                 |
+| `ipv6_address`            | yes       | Specific IPV6 Address to set the DuckDNS records.                                                 |
+| `ipv4_mode`               | yes       | Method to determine the IPV4 address (off, duckdns, nameserver).                                  |
+| `ipv6_mode`               | yes       | Method to determine the IPV6 address (off, nameserver).                                           |
+| `hostname`                | yes       | Hostname to resolve your external IPV4/IPV6 address.                                              |
+| `ipv4_resolver`           | yes       | Specific IPV4 nameserver to resolve the external IPV4 address.                                    |
+| `ipv6_resolver`           | yes       | Specific IPV6 nameserver to resolve the external IPV4 address.                                    |
+
+The Service Call does't require any attributes, but calling it empty won't do anything. Attributes not specified will be set to their defaults shown in the **[Configuration](https://github.com/lfhohmann/ha-duckdns_ipv4_ipv6#3-configuration)** section of this wiki *(Except `ipv4_address` and `ipv6_address` that will default to an empty value)*. The `access_token` and the `domain` will always be fetched from `configuration.yaml` file.
+
+Attributes provided in the Service Call, will overide both the default ones and the ones defined in your `configuration.yaml` file *(If you have any)*, but only for that call. Interval updates will remain using the default values or the ones specified in your `configuration.yaml` file.
+
 # **DISCLAIMER**
 
 This component has been running for several weeks flawlessly on my own Home Assistant installation **(X86_64 - Debian 10 - Home Assistant Supervised)**, updating both my IPV4 and IPV6 address periodically just like it's supposed to. If you follow all the instructions, setup things properly and validate your setup, you shouldn't have any issues with it.
