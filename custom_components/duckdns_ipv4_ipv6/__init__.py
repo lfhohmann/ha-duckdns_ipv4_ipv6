@@ -200,7 +200,7 @@ async def _prepare_update(
     success = True
 
     if ipv4_mode == "duckdns":
-        _LOGGER.debug(f"Updating IPV4 in 'duckdns' mode")
+        _LOGGER.debug(f"Updating IPV4 with 'duckdns' mode")
         if not await _update_duckdns(session, domain, token):
             success = False
 
