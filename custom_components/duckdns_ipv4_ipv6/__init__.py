@@ -165,23 +165,23 @@ async def _update_duckdns(
         return True
 
 
-async def _get_ip_address(hostname, resolver, query_type):
+async def _get_ip_address(hostname, resolver_addr, query_type):
     """Get IP address"""
 
     try:
         resolver = aiodns.DNSResolver()
-        resolver.nameservers = [resolver]
+        resolver.nameservers = [resolver_addr]
         response = await resolver.query(hostname, query_type)
 
     except:
-        _LOGGER.warning(f"Unable to setup resolver: {hostname} - {resolver}")
+        _LOGGER.warning(f"Unable to setup resolver: {hostname} - {resolver_addr}")
         return None
 
     if response:
         _LOGGER.debug(f"Got IP: {response[0].host}")
         return response[0].host
     else:
-        _LOGGER.warning(f"Didn't get an IP from: {hostname} - {resolver}")
+        _LOGGER.warning(f"Didn't get an IP from: {hostname} - {resolver_addr}")
         return None
 
 
