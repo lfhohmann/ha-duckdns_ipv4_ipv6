@@ -44,7 +44,23 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-SERVICE_TXT_SCHEMA = vol.Schema(
+SERVICE_UPDATE_IP_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_HOSTNAME, default=DEFAULT_HOSTNAME): cv.string,
+        vol.Optional(ATTR_IPV4_MODE, default=DEFAULT_IPV4_MODE): vol.Any(
+            "off", "duckdns", "nameserver"
+        ),
+        vol.Optional(ATTR_IPV6_MODE, default=DEFAULT_IPV6_MODE): vol.Any(
+            "off", "nameserver"
+        ),
+        vol.Optional(ATTR_IPV4_RESOLVER, default=DEFAULT_IPV4_RESOLVER): cv.string,
+        vol.Optional(ATTR_IPV6_RESOLVER, default=DEFAULT_IPV6_RESOLVER): cv.string,
+        vol.Optional(ATTR_IPV4_ADDRESS, default=None): vol.Any(None, cv.string),
+        vol.Optional(ATTR_IPV6_ADDRESS, default=None): vol.Any(None, cv.string),
+    }
+)
+
+SERVICE_SET_TXT_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_TXT): vol.Any(None, cv.string),
     }
@@ -53,6 +69,7 @@ SERVICE_TXT_SCHEMA = vol.Schema(
 
 async def async_setup(hass, config):
     """Initialize the DuckDNS component."""
+
     domain = config[DOMAIN][CONF_DOMAIN]
     token = config[DOMAIN][CONF_ACCESS_TOKEN]
     hostname = config[DOMAIN][CONF_HOSTNAME]
@@ -65,15 +82,16 @@ async def async_setup(hass, config):
 
     async def update_domain_interval(_now):
         """Update the DuckDNS entry."""
+
         return await _prepare_update(
-            session,
-            domain,
-            token,
-            hostname,
-            ipv4_resolver,
-            ipv6_resolver,
-            ipv4_mode,
-            ipv6_mode,
+            session=session,
+            domain=domain,
+            token=token,
+            hostname=hostname,
+            ipv4_mode=ipv4_mode,
+            ipv6_mode=ipv6_mode,
+            ipv4_resolver=ipv4_resolver,
+            ipv6_resolver=ipv6_resolver,
         )
 
     intervals = (
@@ -85,12 +103,43 @@ async def async_setup(hass, config):
     )
     async_track_time_interval_backoff(hass, update_domain_interval, intervals)
 
-    async def update_domain_service(call):
-        """Update the DuckDNS entry."""
+    async def update_domain_txt_service(call):
+        """Update the DuckDNS TXT entry."""
+
+        _LOGGER.debug(f"SERVICE - Update TXT service called")
+
         await _update_duckdns(session, domain, token, txt=call.data[ATTR_TXT])
 
     hass.services.async_register(
-        DOMAIN, SERVICE_SET_TXT, update_domain_service, schema=SERVICE_TXT_SCHEMA
+        DOMAIN,
+        SERVICE_SET_TXT,
+        update_domain_txt_service,
+        schema=SERVICE_SET_TXT_SCHEMA,
+    )
+
+    async def update_domain_ip_service(call):
+        """Update the DuckDNS IP entry."""
+
+        _LOGGER.debug(f"SERVICE - Update IP service called")
+
+        await _prepare_update(
+            session=session,
+            domain=domain,
+            token=token,
+            hostname=call.data[ATTR_HOSTNAME],
+            ipv4_mode=call.data[ATTR_IPV4_MODE],
+            ipv6_mode=call.data[ATTR_IPV6_MODE],
+            ipv4_resolver=call.data[ATTR_IPV4_RESOLVER],
+            ipv6_resolver=call.data[ATTR_IPV6_RESOLVER],
+            ipv4_address=call.data[ATTR_IPV4_ADDRESS],
+            ipv6_address=call.data[ATTR_IPV6_ADDRESS],
+        )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_UPDATE_IP,
+        update_domain_ip_service,
+        schema=SERVICE_UPDATE_IP_SCHEMA,
     )
 
     return True
@@ -104,12 +153,13 @@ async def _update_duckdns(
     domain,
     token,
     *,
-    ipv4_addr=None,
-    ipv6_addr=None,
+    ipv4_address=None,
+    ipv6_address=None,
     txt=_SENTINEL,
     clear=False,
 ):
     """Update DuckDNS."""
+
     params = {"domains": domain, "token": token}
 
     if txt is not _SENTINEL:
@@ -123,13 +173,13 @@ async def _update_duckdns(
     if clear:
         params["clear"] = "true"
 
-    if ipv4_addr:
-        _LOGGER.debug(f"Got IPV4: {ipv4_addr}")
-        params["ip"] = ipv4_addr
+    if ipv4_address:
+        _LOGGER.debug(f"Got IPV4: {ipv4_address}")
+        params["ip"] = ipv4_address
 
-    if ipv6_addr:
-        _LOGGER.debug(f"Got IPV6: {ipv6_addr}")
-        params["ipv6"] = ipv6_addr
+    if ipv6_address:
+        _LOGGER.debug(f"Got IPV6: {ipv6_address}")
+        params["ipv6"] = ipv6_address
 
     try:
         resp = await session.get(UPDATE_URL, params=params)
@@ -146,23 +196,23 @@ async def _update_duckdns(
         return True
 
 
-async def _get_ip_address(hostname, resolver_addr, query_type):
+async def _get_ip_address(hostname, resolver_address, query_type):
     """Get IP address"""
 
     try:
         resolver = aiodns.DNSResolver()
-        resolver.nameservers = [resolver_addr]
+        resolver.nameservers = [resolver_address]
         response = await resolver.query(hostname, query_type)
 
     except:
-        _LOGGER.warning(f"Unable to setup resolver: {hostname} - {resolver_addr}")
+        _LOGGER.warning(f"Unable to setup resolver: {hostname} - {resolver_address}")
         return None
 
     if response:
         _LOGGER.debug(f"Got IP: {response[0].host}")
         return response[0].host
     else:
-        _LOGGER.warning(f"Didn't get an IP from: {hostname} - {resolver_addr}")
+        _LOGGER.warning(f"Didn't get an IP from: {hostname} - {resolver_address}")
         return None
 
 
@@ -171,13 +221,15 @@ async def _prepare_update(
     domain,
     token,
     hostname,
-    ipv4_resolver,
-    ipv6_resolver,
     ipv4_mode,
     ipv6_mode,
+    ipv4_resolver,
+    ipv6_resolver,
+    ipv4_address=None,
+    ipv6_address=None,
 ):
-    ipv4_addr = None
-    ipv6_addr = None
+    """Prepare the IP Address/TXT record update"""
+
     success = True
 
     if ipv4_mode == "duckdns":
@@ -187,16 +239,16 @@ async def _prepare_update(
 
     elif ipv4_mode == "nameserver":
         _LOGGER.debug(f"Getting IPV4 address")
-        ipv4_addr = await _get_ip_address(hostname, ipv4_resolver, "A")
+        ipv4_address = await _get_ip_address(hostname, ipv4_resolver, "A")
 
     if ipv6_mode == "nameserver":
         _LOGGER.debug(f"Getting IPV6 address")
-        ipv6_addr = await _get_ip_address(hostname, ipv6_resolver, "AAAA")
+        ipv6_address = await _get_ip_address(hostname, ipv6_resolver, "AAAA")
 
-    if ipv4_addr or ipv6_addr:
+    if ipv4_address or ipv6_address:
         _LOGGER.debug(f"Updating IPV4 and/or IPV6 in nameserver mode")
         if not await _update_duckdns(
-            session, domain, token, ipv4_addr=ipv4_addr, ipv6_addr=ipv6_addr
+            session, domain, token, ipv4_address=ipv4_address, ipv6_address=ipv6_address
         ):
             success = False
 
@@ -207,6 +259,7 @@ async def _prepare_update(
 @bind_hass
 def async_track_time_interval_backoff(hass, action, intervals) -> CALLBACK_TYPE:
     """Add a listener that fires repetitively at every timedelta interval."""
+
     if not iscoroutinefunction:
         _LOGGER.error("Action needs to be a coroutine and return True/False")
         return
@@ -218,6 +271,7 @@ def async_track_time_interval_backoff(hass, action, intervals) -> CALLBACK_TYPE:
 
     async def interval_listener(now):
         """Handle elapsed intervals with backoff."""
+
         nonlocal failed, remove
         try:
             failed += 1
@@ -231,6 +285,7 @@ def async_track_time_interval_backoff(hass, action, intervals) -> CALLBACK_TYPE:
 
     def remove_listener():
         """Remove interval listener."""
+
         if remove:
             remove()  # pylint: disable=not-callable
 

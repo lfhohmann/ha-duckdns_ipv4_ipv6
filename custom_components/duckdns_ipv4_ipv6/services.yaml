@@ -1,3 +1,28 @@
+update_ip:
+  name: Update IP
+  description: "Updates DuckDNS IPV4/IPV6 records to specified addresses or to the address gotten from one of the IP address autodetect modes"
+  fields:
+    ipv4_address:
+      description: "(Optional) Specific IPV4 Address to set the DuckDNS records"
+      example: "123.123.123.123"
+    ipv6_address:
+      description: "(Optional) Specific IPV6 Address to set the DuckDNS records"
+      example: "1234:abcd:1234:abcd:1234:abcd:1234:abcd"
+    ipv4_mode:
+      description: "(Optional) Method to determine the IPV4 address (off, duckdns, nameserver)"
+      example: "auto"
+    ipv6_mode:
+      description: "(Optional) Method to determine the IPV6 address (off, nameserver)"
+      example: "nameserver"
+    hostname:
+      description: "(Optional) Hostname to resolve your external IPV4/IPV6 address"
+      example: "myip.opendns.com"
+    ipv4_resolver:
+      description: "(Optional) Specific IPV4 nameserver to resolve the external IPV4 address"
+      example: "208.67.222.222"
+    ipv6_resolver:
+      description: "(Optional) Specific IPV6 nameserver to resolve the external IPV6 address"
+      example: "2620:0:ccc::2"
 set_txt:
   name: Set TXT
   description: Set the TXT record of your DuckDNS subdomain.
