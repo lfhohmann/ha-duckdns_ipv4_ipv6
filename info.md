@@ -21,9 +21,9 @@ This is a custom component that can update both IPV4 and IPV6 entries of a [Duck
 + Home Assistant Core dependent *(It means that if Home Assistant Core stops working, this component will stop working too)*.
 + Currently, IPV6 can only be fetched via `nameserver` mode, *(maybe, more options can be added in the future)*.
 
-## **Installation**
+## Installation
 
-### **1. Before install:**
+### 1. Before install:
 
 **Optional, but highly recommended steps!!**
 
@@ -35,7 +35,7 @@ This is a custom component that can update both IPV4 and IPV6 entries of a [Duck
     + I believe that in most cases, this custom component should have no issues with other components/addons running in parallel, updating your Duck DNS IP addresses, so, **theoretically**, it should be safe to have more then one component/addon simultaneously. (**This hasn't been tested!**)
     + **But**, having more than one component/addon updating your Duck DNS IP addresses could make it hard to debug and figure out whether this component is working properly or not. So, if you want to have this custom component and other/s components/addons simultaneously on your setup, I would recommend you to disable all other components/addons before installing this and only enable then back once you have fully validated, that this custom component is working as it should.
 
-### **2. Install Method A**: HACS
+### 2. Install Method A: HACS
 
 This is a regular HACS install from custom Github repository *(if you already know how to do it, you can probably skip the following steps)*
 
@@ -54,7 +54,7 @@ This is a regular HACS install from custom Github repository *(if you already kn
 1. **Restart** your Home Assistant
 1. **Done!** *(You still need to configure the component, check out the **[Configuration](https://github.com/lfhohmann/ha-duckdns_ipv4_ipv6#configuration)** section below)*
 
-### **2. Install Method B**: Manual
+### 2. Install Method B: Manual
 
 1. Download the `custom_components` folder.
 2. Copy the `duckdns_ipv4_ipv6` directory to the `custom_components` directory of your homeassistant installation. The `custom_components` directory resides within your homeassistant configuration directory.
@@ -71,7 +71,7 @@ After a correct installation, your configuration directory should look like the 
             └── services.yaml
     ```
 
-### **3. Configuration**
+### 3. Configuration
 
 Once the component has been installed, you need to configure it in order to make it work.
 This component must be configured by manually editing the `configuration.yaml`:
@@ -174,11 +174,21 @@ You must use resolvers that match your chosen hostname, otherwise, it won't work
 
 You can't combine the `whoami.akamai.net` hostname with `216.239.32.10` resolver for example.
 
-# **DISCLAIMER**
+## Services
+
+### Set TXT
+
+Set the TXT record of your DuckDNS subdomain. *(This is the same service as the one provided via the integrated DuckDNS component)*
+
+| Service data attribute | Optional | Description |
+| ---------------------- | -------- | ----------- |
+| `txt` | no | Payload for the TXT record. |
+
+# DISCLAIMER
 
 This component has been running for several weeks flawlessly on my own Home Assistant installation **(X86_64 - Debian 10 - Home Assistant Supervised)**, updating both my IPV4 and IPV6 address periodically just like it's supposed to. If you follow all the instructions, setup things properly and validate your setup, you shouldn't have any issues with it.
 
-### **BUT...**
+### BUT...
 
 This code can contain a few bugs here and there. **I am not responsible** for failures, bootloops, unresponsive/unbootable systems, hardware meltdown, **thermonuclear war**, or your house catching on fire beacuse you were not able to externally access your Home Assistant to turn off the oven. **YOU ARE FREE WILLINGLY CHOOSING** to install this component.
 
