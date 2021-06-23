@@ -46,7 +46,7 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Required(CONF_ACCESS_TOKEN): cv.string,
                 vol.Optional(CONF_HOSTNAME, default=DEFAULT_HOSTNAME): cv.string,
                 vol.Optional(CONF_IPV4_MODE, default=DEFAULT_IPV4_MODE): vol.Any(
-                    "off", "auto", "nameserver"
+                    "off", "duckdns", "nameserver"
                 ),
                 vol.Optional(CONF_IPV6_MODE, default=DEFAULT_IPV6_MODE): vol.Any(
                     "off", "nameserver"
