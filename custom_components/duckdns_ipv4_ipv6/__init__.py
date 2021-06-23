@@ -152,8 +152,13 @@ async def _update_duckdns(
         # _LOGGER.debug(f"_update_duckdns: Got IPV6 - {ipv6_address}")
         params["ipv6"] = ipv6_address
 
-    resp = await session.get(UPDATE_URL, params=params)
-    body = await resp.text()
+    try:
+        resp = await session.get(UPDATE_URL, params=params)
+        body = await resp.text()
+    except:
+        _LOGGER.warning(
+            f"_update_duckdns: Unable to connect to DuckDNS to update '{domain}' domain"
+        )
 
     if body != "OK":
         _LOGGER.warning(f"_update_duckdns: Updating DuckDNS domain failed: {domain}")
@@ -197,13 +202,13 @@ async def _prepare_update(
     ipv4_mode,
     ipv6_mode,
 ):
-    _LOGGER.debug(f"{hostname} {ipv4_resolver} {ipv6_resolver} {ipv4_mode} {ipv6_mode}")
+    # _LOGGER.debug(f"{hostname} {ipv4_resolver} {ipv6_resolver} {ipv4_mode} {ipv6_mode}")
 
     ipv4_address = None
     ipv6_address = None
     success = True
 
-    if ipv4_mode == "auto":
+    if ipv4_mode == "duckdns":
         # _LOGGER.debug(f"_prepare_update: Updating IPV4 in auto mode")
         if not await _update_duckdns(session, domain, token):
             success = False
