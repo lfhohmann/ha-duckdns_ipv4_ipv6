@@ -33,8 +33,8 @@ CONF_IPV6_RESOLVER = "ipv6_resolver"
 
 UPDATE_URL = "https://www.duckdns.org/update"
 DEFAULT_HOSTNAME = "myip.opendns.com"
-DEFAULT_IPV4_MODE = "off"
-DEFAULT_IPV6_MODE = "off"
+DEFAULT_IPV4_MODE = False
+DEFAULT_IPV6_MODE = False
 DEFAULT_IPV4_RESOLVER = "208.67.222.222"
 DEFAULT_IPV6_RESOLVER = "2620:0:ccc::2"
 
@@ -46,10 +46,10 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Required(CONF_ACCESS_TOKEN): cv.string,
                 vol.Optional(CONF_HOSTNAME, default=DEFAULT_HOSTNAME): cv.string,
                 vol.Optional(CONF_IPV4_MODE, default=DEFAULT_IPV4_MODE): vol.Any(
-                    "off", "duckdns", "nameserver"
+                    False, "duckdns", "nameserver"
                 ),
                 vol.Optional(CONF_IPV6_MODE, default=DEFAULT_IPV6_MODE): vol.Any(
-                    "off", "nameserver"
+                    False, "nameserver"
                 ),
                 vol.Optional(
                     CONF_IPV4_RESOLVER, default=DEFAULT_IPV4_RESOLVER
