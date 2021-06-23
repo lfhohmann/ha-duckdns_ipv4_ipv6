@@ -15,6 +15,7 @@ This is a custom component that can update both IPV4 and IPV6 entries of a [Duck
 + Three different IPV4 update modes: *(off, duckdns, nameserver)*.
 + Two different IPV6 update modes: *(off, nameserver)*.
 + Optionally, the user can specify the nameservers and host that he/she wants to use to resolve the IP addresses.
++ A Service Call that allows setting the TXT entry
 
 ## Limitations
 
