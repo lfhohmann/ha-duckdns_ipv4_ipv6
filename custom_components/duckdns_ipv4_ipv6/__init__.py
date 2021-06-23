@@ -154,7 +154,7 @@ async def _update_duckdns(
         resp = await session.get(UPDATE_URL, params=params)
         body = await resp.text()
     except:
-        _LOGGER.error(f"Unable to connect to DuckDNS to update '{domain}' domain")
+        _LOGGER.warning(f"Unable to connect to DuckDNS to update '{domain}' domain")
         return False
 
     if body != "OK":
